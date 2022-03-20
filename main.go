@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -28,10 +29,9 @@ func main() {
 		fmt.Println("Sharingan!")
 	}
 
-	// Register the messageCreate func as a callback for MessageCreate events.
-	discord.AddHandler(messageCreate)
+	// Register a handler for message events.
+	discord.AddHandler(messageHandler)
 
-	// In this example, we only care about receiving message events.
 	discord.Identify.Intents = discordgo.IntentsGuildMessages
 
 	// Open a websocket connection to Discord and begin listening.
@@ -51,9 +51,20 @@ func main() {
 	discord.Close()
 }
 
-func messageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
-	// Ignore Kakachi's own messages
+func messageHandler(session *discordgo.Session, message *discordgo.MessageCreate) {
+	// Prefix Regexp
+	prefix := regexp.MustCompile(`^(kb)`)
+
+	// Ignore Kakashi's own messages
 	if message.Author.ID == session.State.User.ID {
 		return
+	}
+
+	// Copy messages starting with the prefix
+	if prefix.Match([]byte(message.Content)) {
+		_, err := session.ChannelMessageSend(message.ChannelID, message.Content[3:])
+		if err != nil {
+			fmt.Println("Kakashi tried weaving the wrong signs!:", err)
+		}
 	}
 }
